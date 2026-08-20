@@ -1,23 +1,25 @@
 package dev.hbop.resizablestacks.mixin;
 
 import dev.hbop.resizablestacks.util.StackSizeHelper;
-import net.minecraft.util.dynamic.Codecs;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-@Mixin(Codecs.class)
+@Mixin(ItemStack.class)
 public abstract class M_Codecs {
-    
-    // increase hardcoded max stack size
-    // when updating - check that no unintended calls give a max of 99
-    @ModifyVariable(
-            method = "rangedInt(II)Lcom/mojang/serialization/Codec;",
-            at = @At("HEAD"),
-            ordinal = 1,
-            argsOnly = true
+
+    // Expand only ItemStack.CODEC's count range, instead of changing every
+    // unrelated ExtraCodecs.intRange(1, 99) call in the game.
+    @ModifyArg(
+            method = "lambda$static$1",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/util/ExtraCodecs;intRange(II)Lcom/mojang/serialization/Codec;"
+            ),
+            index = 1
     )
-    private static int rangedInt(int value) {
+    private static int expandItemStackCodecRange(int value) {
         return value == 99 ? StackSizeHelper.MAX_STACK_SIZE : value;
     }
 }
